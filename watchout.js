@@ -48,8 +48,34 @@ var populatePlayer = function(player){
 var moveEnemies = function() {
   svg.selectAll('.enemy').data(enemies)
      .transition().duration(500)
-     .attr('cx', function(d, i){ return Math.floor(Math.random() * (300 - 50) + 50); })
-     .attr('cy', function(d, i){ return Math.floor(Math.random() * (300 - 50) + 50); });
+     .attr('cx', function(d, i){ 
+        d.x = Math.floor(Math.random() * (300 - 50) + 50); 
+        return d.x;
+      })
+     .attr('cy', function(d, i){ 
+        d.y = Math.floor(Math.random() * (300 - 50) + 50); 
+        return d.y;
+      });
+}
+
+var checkCollision = function(){
+  var targetX,
+      targetY;
+  var playerX = player.x,
+      playerY = player.y;
+ // && (targetX + enemy.radius < player.x - player.radius
+  for (var i = 0; i < enemies.length; i++){
+    var enemy = enemies[i];
+    targetX = enemy.x;
+    targetY = enemy.y;
+    // console.log("enemy [", targetX, ",", targetY, "    player [", player.x, ",", player.y, "]");
+    if ((targetX - enemy.radius < player.x + player.radius) && (targetX + enemy.radius > player.x - player.radius)){
+      if ((targetY - enemy.radius < player.y + player.radius) && (targetY + enemy.radius > player.y - player.radius)){ 
+      //collision
+      console.log("collision!!");
+    }
+    }
+  }
 }
 
 //add event listener for clicking and dragging the player
@@ -66,25 +92,29 @@ var isDragging = false;
 
 setInterval(function(){ moveEnemies() }, 1000);
 
-d3.select('.gameSpace').selectAll('.player').data(playerData).on('mousedown', function(d) {
-  mouseCoordinates = d3.mouse(this);
-  isDragging = true;
-  console.log(mouseCoordinates);
-  d3.selectAll('.player').attr('cx', mouseCoordinates[0]).attr('cy', mouseCoordinates[1]);
-});
+// d3.select('.gameSpace').selectAll('.player').data(playerData).on('mousedown', function(d) {
+//   mouseCoordinates = d3.mouse(this);
+//   isDragging = true;
+//   console.log(mouseCoordinates);
+//   d3.selectAll('.player').attr('cx', mouseCoordinates[0]).attr('cy', mouseCoordinates[1]);
+// });
 
-  d3.select('.gameSpace').selectAll('.player').data(playerData).on('mousemove', function(d) {
-if (isDragging === true) {
+  d3.select('.gameSpace').data(playerData).on('mousemove', function(d) {
+// if (isDragging === true) {
     mouseCoordinates = d3.mouse(this);
-  d3.selectAll('.player').attr('cx', mouseCoordinates[0]).attr('cy', mouseCoordinates[1]);
-}
+    player.x = mouseCoordinates[0];
+    player.y = mouseCoordinates[1];
+  d3.selectAll('.player').attr('cx', player.x).attr('cy', player.y);
+// }
   });  
 
-d3.select('.gameSpace').selectAll('.player').data(playerData).on('mouseup', function(d) {
-  isDragging = false;
-  // mouseCoordinates = d3.mouse(this);
-  // this.attr('cx', mouseCoordinates[0]).attr('cy', mouseCoordinates[1]);
-});  
+// d3.select('.gameSpace').selectAll('.player').data(playerData).on('mouseup', function(d) {
+//   isDragging = false;
+//   // mouseCoordinates = d3.mouse(this);
+//   // this.attr('cx', mouseCoordinates[0]).attr('cy', mouseCoordinates[1]);
+// });  
+
+setInterval(function() {checkCollision()}, 100);
 
 
 
