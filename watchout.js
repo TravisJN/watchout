@@ -6,15 +6,7 @@ var svg = d3.select('svg').attr("height", 500).attr("width", 500);
 var Enemy = function(x, y){
   this.x = x;
   this.y = y;
-  this.radius = 10;
-}
-
-Enemy.prototype.drawEnemy = function(){
-  svg.selectAll('circle').data([{r:this.radius, cx: this.x, cy: this.y}]).enter()
-      .append('circle')
-      .attr("r", function(d){ return d.r; })
-      .attr("cx", function(d){ return d.cx; })
-      .attr("cy", function(d){ return d.cy; });
+  this.radius = 5;
 }
 
 var populateEnemies = function(numEnemies){
@@ -37,4 +29,4 @@ var populateEnemies = function(numEnemies){
 
 }
 
-populateEnemies(10);
+populateEnemies(15);
