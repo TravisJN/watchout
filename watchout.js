@@ -3,7 +3,7 @@
 var Enemy = function(x, y){
   this.x = x;
   this.y = y;
-  this.radius = 12;
+  this.radius = 10;
   this.color = "black";
 }
 
@@ -17,10 +17,21 @@ var Player = function(x, y){
 //Loop through number of enemies and populate a new enemy at a random x and y coordinate
 var populateEnemies = function(numEnemies){
   var x;//random x
-  var y;//random y
+  var y;//enemies start off the screen then drop in
   for (var i = 0; i < numEnemies; i++){
-    x = Math.floor(Math.random() * (300 - 50) + 50);
-    y = Math.floor(Math.random() * (300 - 50) + 50);
+    x = 0 - (Math.floor(Math.random() * (1000)));
+    y = 0 - (Math.floor(Math.random() * (1000)));
+    x *= (Math.round(Math.random()) * 2 - 1);
+    y *= (Math.round(Math.random()) * 2 - 1);
+    console.log(x, ",", y);
+    if (x > 0 && x < 500){
+      x *= -1;
+      console.log("x:",x);
+    }
+    if (y > 0 && y < 500){
+      y *= -1;
+      console.log("y:",y);
+    }
     var newEnemy = new Enemy(x, y);
     enemies.push(newEnemy);  //push new enemies into array in order to easily access their data in D3
   }
@@ -33,6 +44,17 @@ var populateEnemies = function(numEnemies){
       .attr("cx", function(d, i){ return d.x; })
       .attr("cy", function(d, i){ return d.y; });
 
+  //Drop enemies onto play area
+  svg.selectAll('.enemy').data(enemies)
+      .transition().ease('elastic').duration(1500)
+      .attr("cy", function(d, i){ 
+        d.y = Math.floor(Math.random() * (300 - 50) + 50);
+        return d.y;
+      })
+      .attr("cx", function(d, i){ 
+        d.x = Math.floor(Math.random() * (300 - 50) + 50);
+        return d.x;
+   });
 }
 
 //Create the player
@@ -139,7 +161,7 @@ var startGame = function() {
   //add event listener for clicking and dragging the player
   
   var mouseCoordinates = [0, 0];     //d3 coordinates are stored in an array, [x, y]
-  var numEnemies = 3;               //Number of enemies
+  var numEnemies = 10;               //Number of enemies
   var timeBetweenEnemyMoves = 1000;  //Time between each time the enemies move to a new location in ms
   populateEnemies(numEnemies);  
   populatePlayer();                  //Create the player and paint to screen
