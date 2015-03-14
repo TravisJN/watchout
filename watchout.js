@@ -46,6 +46,8 @@ var populatePlayer = function(player){
 }
 
 var moveEnemies = function() {
+  var collided = false;
+
   svg.selectAll('.enemy').data(enemies)
      .transition().duration(500)
      .attr('cx', function(d, i){ 
@@ -55,68 +57,94 @@ var moveEnemies = function() {
      .attr('cy', function(d, i){ 
         d.y = Math.floor(Math.random() * (300 - 50) + 50); 
         return d.y;
-      });
+      })
+     .tween('Collision Check', function(d, i){
+       return function(t) {
+        if (checkCollision(d.x * t, d.y * t) === true && collided === false){
+          collided = true;
+          score = 0;
+          collisions++;
+       }
+     }
+     });
 }
 
-var checkCollision = function(){
-  var targetX,
-      targetY;
+var checkCollision = function(targetX, targetY){
+  var player = playerData[0];
   var playerX = player.x,
       playerY = player.y;
- // && (targetX + enemy.radius < player.x - player.radius
-  for (var i = 0; i < enemies.length; i++){
-    var enemy = enemies[i];
-    targetX = enemy.x;
-    targetY = enemy.y;
-    // console.log("enemy [", targetX, ",", targetY, "    player [", player.x, ",", player.y, "]");
-    if ((targetX - enemy.radius < player.x + player.radius) && (targetX + enemy.radius > player.x - player.radius)){
-      if ((targetY - enemy.radius < player.y + player.radius) && (targetY + enemy.radius > player.y - player.radius)){ 
+  var enemyRadius = enemies[0].radius;
+
+    if ((targetX - enemyRadius < player.x + player.radius) && (targetX + enemyRadius > player.x - player.radius)){
+      if ((targetY - enemyRadius < player.y + player.radius) && (targetY + enemyRadius > player.y - player.radius)){ 
       //collision
-      console.log("collision!!");
-    }
+      return true;
     }
   }
+  return false;
+  
 }
 
-//add event listener for clicking and dragging the player
-d3.select('.gameSpace').append("svg");
-var svg = d3.select('svg').attr("height", 500).attr("width", 500);
-var enemies = [];
-var playerData = [];  //d3 accepts arrays as data arguments so push the player object into an array even though there is only one of them
-var player = new Player(330, 100);
-playerData.push(player);
-populatePlayer(player);
-populateEnemies(15);
-var mouseCoordinates = [0, 0];  //d3 coordinates are stored in an array, [x, y]
-var isDragging = false;
+var updateScore = function() {
+  score++;
+  if (score > highScore){
+    highScore = score;
+  }
+  d3.select('.scoreboard').selectAll('div').data(["High Score: " + highScore, "Score: " + score, "Collisions: " + collisions])
+    .text(function(d){ return d });
+}
 
-setInterval(function(){ moveEnemies() }, 1000);
 
-// d3.select('.gameSpace').selectAll('.player').data(playerData).on('mousedown', function(d) {
-//   mouseCoordinates = d3.mouse(this);
-//   isDragging = true;
-//   console.log(mouseCoordinates);
-//   d3.selectAll('.player').attr('cx', mouseCoordinates[0]).attr('cy', mouseCoordinates[1]);
-// });
+//----GLOBAL VARIABLES----
+  d3.select('.gameSpace').append("svg");
+  var svg = d3.select('svg').attr("height", 500).attr("width", 500);
+  var enemies = [];
+  var playerData = [];  //d3 accepts arrays as data arguments so push the player object into an array even though there is only one of them
+  var score = 0;
+  var highScore = 0;
+  var collisions = 0;
+
+
+//----MAIN GAME FUNCTION----
+var game = function() {
+  //add event listener for clicking and dragging the player
+  
+  var player = new Player(330, 100);
+  var mouseCoordinates = [0, 0];  //d3 coordinates are stored in an array, [x, y]
+  
+  playerData.push(player);
+  populatePlayer(player);
+  populateEnemies(15);
+
+  setInterval(function(){ moveEnemies() }, 1000);
+  setInterval(function(){
+    var collided = false;
+    for (var i = 0; i < enemies.length; i++){
+      if (checkCollision(enemies[i].x, enemies[i].y) === true && collided === false){
+        collided = true;
+      }
+    }
+    if (collided === true){
+      score = 0;
+      collisions++;    
+    }
+    updateScore();
+  }, 50);
+
 
   d3.select('.gameSpace').data(playerData).on('mousemove', function(d) {
-// if (isDragging === true) {
+
     mouseCoordinates = d3.mouse(this);
     player.x = mouseCoordinates[0];
     player.y = mouseCoordinates[1];
-  d3.selectAll('.player').attr('cx', player.x).attr('cy', player.y);
-// }
+    d3.selectAll('.player').attr('cx', player.x).attr('cy', player.y);
+
   });  
-
-// d3.select('.gameSpace').selectAll('.player').data(playerData).on('mouseup', function(d) {
-//   isDragging = false;
-//   // mouseCoordinates = d3.mouse(this);
-//   // this.attr('cx', mouseCoordinates[0]).attr('cy', mouseCoordinates[1]);
-// });  
-
-setInterval(function() {checkCollision()}, 100);
+  
+}
 
 
 
 
+game();
 
