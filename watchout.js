@@ -3,7 +3,7 @@
 var Enemy = function(x, y){
   this.x = x;
   this.y = y;
-  this.radius = 5;
+  this.radius = 12;
   this.color = "black";
 }
 
@@ -18,7 +18,6 @@ var Player = function(x, y){
 var populateEnemies = function(numEnemies){
   var x;//random x
   var y;//random y
-
   for (var i = 0; i < numEnemies; i++){
     x = Math.floor(Math.random() * (300 - 50) + 50);
     y = Math.floor(Math.random() * (300 - 50) + 50);
@@ -56,25 +55,31 @@ var populatePlayer = function(){
 var moveEnemies = function() {
   var collided = false;  //Store the state to only log one collision per transition
   var enemyMovementSpeed = 1000;  //Time in ms for enemies to move to new location, increase to slow enemies
+  var startX, startY;
 
   //Transition all enemies to a new random location
   svg.selectAll('.enemy').data(enemies)
      .transition().duration(enemyMovementSpeed)
      .attr('cx', function(d, i){ 
+        startX = d.x;
         d.x = Math.floor(Math.random() * (300 - 50) + 50); 
         return d.x;
       })
      .attr('cy', function(d, i){ 
+        startY = d.y;
         d.y = Math.floor(Math.random() * (300 - 50) + 50); 
         return d.y;
       })
      .tween('Collision Check', function(d, i){  //Run checkCollision at each step in the transition to register collisions while transitioning
        return function(t) {  //t is the percentage of the way through the transition
-        if (checkCollision(d.x * t, d.y * t) === true && collided === false){  //multiply the ending position with t to get the tween position
+        d.x = d3.select(this).attr('cx');
+        d.y = d3.select(this).attr('cy');
+        if (checkCollision(d.x, d.y) === true && collided === false){  
           collided = true;
           score = 0;
           collisions++;
        }
+          updateScore(collided);
      }
      });
 }
@@ -86,19 +91,28 @@ var checkCollision = function(targetX, targetY){
       playerY = player.y;
   var enemyRadius = enemies[0].radius;
 
-    if ((targetX - enemyRadius < player.x + player.radius) && (targetX + enemyRadius > player.x - player.radius)){
-      if ((targetY - enemyRadius < player.y + player.radius) && (targetY + enemyRadius > player.y - player.radius)){ 
-      //collision
-      return true;
-    }
+  //get distances between objects
+  var dx = targetX - player.x;
+  var dy = targetY - player.y;
+  var distance = Math.sqrt(dx * dx + dy * dy);
+
+  //check if the objects are close enough to be touching
+  if (distance <= player.radius + enemyRadius){
+    return true;
+  } else {
+    return false;
   }
-  return false;
   
 }
 
 //Called at an interval, updates the scores displayed
-var updateScore = function() {
-  score++;  //Increase the score at each interval
+var updateScore = function(collided) {
+  if (collided === true && score > 1){
+    score = 0;
+    collisions++;    
+  } else if (collided === false){
+    score++;  //Increase the score at each interval
+  }
   if (score > highScore){  //Set high score if needed
     highScore = score;
   }
@@ -124,31 +138,15 @@ var updateScore = function() {
 var startGame = function() {
   //add event listener for clicking and dragging the player
   
-  var mouseCoordinates = [0, 0];  //d3 coordinates are stored in an array, [x, y]
-  var numEnemies = 15;  //Number of enemies
+  var mouseCoordinates = [0, 0];     //d3 coordinates are stored in an array, [x, y]
+  var numEnemies = 3;               //Number of enemies
   var timeBetweenEnemyMoves = 1000;  //Time between each time the enemies move to a new location in ms
-  populatePlayer();  //Create the player and paint to screen
   populateEnemies(numEnemies);  
+  populatePlayer();                  //Create the player and paint to screen
   var player = playerArray[0];
 
-
-  setInterval(function(){ moveEnemies() }, timeBetweenEnemyMoves);  //Move the enemies at an interval
-
-  //A consistent check on collisions and score update
-  setInterval(function(){  
-    var collided = false;
-    for (var i = 0; i < enemies.length; i++){
-      if (checkCollision(enemies[i].x, enemies[i].y) === true && collided === false){
-        collided = true;
-      }
-    }
-    if (collided === true){
-      score = 0;
-      collisions++;    
-    }
-    updateScore();
-  }, 100);
-
+  setInterval(function(){ moveEnemies(); }, timeBetweenEnemyMoves);
+ 
   //Event listener that locks the player to the mouse position
   d3.select('.gameSpace').data(playerArray).on('mousemove', function(d) {
     mouseCoordinates = d3.mouse(this);
