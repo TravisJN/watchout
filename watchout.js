@@ -4,7 +4,7 @@ var Enemy = function(x, y){
   this.x = x;
   this.y = y;
   this.radius = 10;
-  this.color = "black";
+  this.color = "red";
 }
 
 var Player = function(x, y){
@@ -23,14 +23,11 @@ var populateEnemies = function(numEnemies){
     y = 0 - (Math.floor(Math.random() * (1000)));
     x *= (Math.round(Math.random()) * 2 - 1);
     y *= (Math.round(Math.random()) * 2 - 1);
-    console.log(x, ",", y);
     if (x > 0 && x < 500){
       x *= -1;
-      console.log("x:",x);
     }
     if (y > 0 && y < 500){
       y *= -1;
-      console.log("y:",y);
     }
     var newEnemy = new Enemy(x, y);
     enemies.push(newEnemy);  //push new enemies into array in order to easily access their data in D3
@@ -42,7 +39,8 @@ var populateEnemies = function(numEnemies){
       .attr('class', 'enemy')
       .attr("r", function(d, i){ return d.radius; })
       .attr("cx", function(d, i){ return d.x; })
-      .attr("cy", function(d, i){ return d.y; });
+      .attr("cy", function(d, i){ return d.y; })
+      .attr('fill', 'black');
 
   //Drop enemies onto play area
   svg.selectAll('.enemy').data(enemies)
@@ -54,7 +52,7 @@ var populateEnemies = function(numEnemies){
       .attr("cx", function(d, i){ 
         d.x = Math.floor(Math.random() * (300 - 50) + 50);
         return d.x;
-   });
+      });
 }
 
 //Create the player
@@ -77,7 +75,6 @@ var populatePlayer = function(){
 var moveEnemies = function() {
   var collided = false;  //Store the state to only log one collision per transition
   var enemyMovementSpeed = 1000;  //Time in ms for enemies to move to new location, increase to slow enemies
-  var startX, startY;
 
   //Transition all enemies to a new random location
   svg.selectAll('.enemy').data(enemies)
@@ -96,16 +93,17 @@ var moveEnemies = function() {
        return function(t) {  //t is the percentage of the way through the transition
         d.x = d3.select(this).attr('cx');
         d.y = d3.select(this).attr('cy');
-        if (checkCollision(d.x, d.y) === true && collided === false){  
+        if (collided === false){
+        if (checkCollision(d.x, d.y) === true){  
           collided = true;
           score = 0;
           collisions++;
        }
-          updateScore(collided);
+     }
      }
      });
+          updateScore(collided);
 }
-
 //Compare the hitboxes of the player and an enemy to check for a collision
 var checkCollision = function(targetX, targetY){
   var player = playerArray[0];
@@ -120,6 +118,10 @@ var checkCollision = function(targetX, targetY){
 
   //check if the objects are close enough to be touching
   if (distance <= player.radius + enemyRadius){
+    if (playerDead === false){
+      screenShake();
+      killPlayer();
+    }
     return true;
   } else {
     return false;
@@ -127,17 +129,56 @@ var checkCollision = function(targetX, targetY){
   
 }
 
+var screenShake = function() {
+  if (playerDead === false){
+  var gameScreen = d3.select('.gameSpace');
+
+  gameScreen.transition().duration(50).style({
+    'top' : '7px',
+    'left' : '7px'
+  }).transition().duration(50).style({
+    'top' : '-7px',
+    'left' : '-7px'
+  }).transition().duration(50).style({
+    'top' : '7px',
+    'left' : '7px'
+  }).transition().duration(50).style({
+    'top' : '-7px',
+    'left' : '-7px'
+  }).transition().duration(50).style({
+    'top' : '7px',
+    'left' : '7px'
+  }).transition().duration(50).style({
+    'top' : '-7px',
+    'left' : '-7px'
+  });
+}
+}
+
+var killPlayer = function(){
+  svg.select('.player').data(playerArray)
+    .transition().duration(1000).ease('bounce')
+  .attr('cy', '493px').each('end', function(d){
+    d.y = 493;
+  });
+  playerDead = true;
+}
+
 //Called at an interval, updates the scores displayed
 var updateScore = function(collided) {
+
   if (collided === true && score > 1){
     score = 0;
     collisions++;    
-  } else if (collided === false){
+  } else if (collided === false && playerDead === false){
     score++;  //Increase the score at each interval
   }
   if (score > highScore){  //Set high score if needed
     highScore = score;
   }
+}
+
+var printScore = function(){
   //Print the scores to the screen
   d3.select('.scoreboard').selectAll('div').data(["High Score: " + highScore, "Score: " + score, "Collisions: " + collisions])
     .text(function(d){ return d });
@@ -154,6 +195,7 @@ var updateScore = function(collided) {
   var score = 0;
   var highScore = 0;
   var collisions = 0;
+  var playerDead = false;
 
 
 //----MAIN GAME FUNCTION----
@@ -163,20 +205,33 @@ var startGame = function() {
   var mouseCoordinates = [0, 0];     //d3 coordinates are stored in an array, [x, y]
   var numEnemies = 10;               //Number of enemies
   var timeBetweenEnemyMoves = 1000;  //Time between each time the enemies move to a new location in ms
-  populateEnemies(numEnemies);  
+  populateEnemies(numEnemies); 
   populatePlayer();                  //Create the player and paint to screen
   var player = playerArray[0];
 
   setInterval(function(){ moveEnemies(); }, timeBetweenEnemyMoves);
+  setInterval(function(){ printScore(); }, 100);
  
   //Event listener that locks the player to the mouse position
   d3.select('.gameSpace').data(playerArray).on('mousemove', function(d) {
     mouseCoordinates = d3.mouse(this);
-    player.x = mouseCoordinates[0];
-    player.y = mouseCoordinates[1];
-    d3.selectAll('.player').attr('cx', player.x).attr('cy', player.y);
+    if (playerDead === false){
+      player.x = mouseCoordinates[0];
+      player.y = mouseCoordinates[1];
+      d3.selectAll('.player').attr('cx', player.x).attr('cy', player.y);
+    } else {
+      d3.selectAll('.player').data(playerArray).on('click', function(d){
+        playerDead = false;
+      })
+
+    }
+    // else {
+    //   d3.selectAll('.player').transition().duration(500).attr('cx', player.x).attr('cy', player.y);
+    //   setTimeout(function(){ playerDead = false; }, 1000);
+    //   // playerDead = false;
+    // }
   });  
 }
 
 startGame();
-
+//d3.timer(checkCollision);
