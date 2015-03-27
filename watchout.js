@@ -51,11 +51,11 @@ var populateEnemies = function(){
   //Drop enemies onto play area
   svg.selectAll('.enemy').data(enemies)
       .transition().ease('elastic').duration(1500)
-      .attr("cy", function(d, i){ 
+      .attr("cy", function(d, i){
         d.y = Math.floor(Math.random() * (settings.height - 50) + 50);
         return d.y;
       })
-      .attr("cx", function(d, i){ 
+      .attr("cx", function(d, i){
         d.x = Math.floor(Math.random() * (settings.width - 50) + 50);
         return d.x;
       });
@@ -69,7 +69,7 @@ var populatePlayer = function(){
   //Print to screen
   svg.selectAll('.player').data(playerArray).enter()
      .append('circle')
-     .attr('class', 'player')
+   .attr('class', 'player')
      .attr("r", settings.playerR)
      .attr("cx", function(d, i){ return d.x; })
      .attr("cy", function(d, i){ return d.y; })
@@ -85,14 +85,14 @@ var moveEnemies = function() {
   //Transition all enemies to a new random location
   svg.selectAll('.enemy').data(enemies)
      .transition().duration(enemyMovementSpeed)
-     .attr('cx', function(d, i){ 
+     .attr('cx', function(d, i){
         // startX = d.x;
-        d.x = Math.floor(Math.random() * ((settings.width - settings.enemyR) - 50) + 50); 
+        d.x = Math.floor(Math.random() * ((settings.width - settings.enemyR) - 50) + 50);
         return d.x;
       })
-     .attr('cy', function(d, i){ 
+     .attr('cy', function(d, i){
         // startY = d.y;
-        d.y = Math.floor(Math.random() * ((settings.height - settings.enemyR) - 50) + 50); 
+        d.y = Math.floor(Math.random() * ((settings.height - settings.enemyR) - 50) + 50);
         return d.y;
       })
      .tween('Collision Check', function(d, i){  //Run checkCollision at each step in the transition to register collisions while transitioning
@@ -100,7 +100,7 @@ var moveEnemies = function() {
         d.x = d3.select(this).attr('cx');
         d.y = d3.select(this).attr('cy');
         if (collided === false){
-        if (checkCollision(d.x, d.y) === true){  
+        if (checkCollision(d.x, d.y) === true){
           collided = true;
           score = 0;
        }
@@ -131,7 +131,7 @@ var checkCollision = function(targetX, targetY){
   } else {
     return false;
   }
-  
+
 }
 
 var screenShake = function() {
@@ -152,7 +152,7 @@ var screenShake = function() {
       'top' : '7px',
       'left' : '7px'
     }).transition().duration(50).style({
-      'top' : '-7px',
+  'top' : '-7px',
       'left' : '-7px'
     });
     //Create explosion circle at player coordinates
@@ -181,7 +181,7 @@ var updateScore = function(collided) {
 
   if (collided === true && playerDead === false){
     score = 0;
-    // collisions++;    
+    // collisions++;
   } else if (collided === false && playerDead === false){
     score++;  //Increase the score at each interval
   }
@@ -198,7 +198,7 @@ var printScore = function(){
 
 //----GLOBAL VARIABLES----
   d3.select('.gameSpace').append("svg");
-  var svg = d3.select('svg').attr("height", settings.height).attr("width", settings.width).attr('fill', 'url(#background.jpg)');
+  var svg = d3.select('svg').attr("height", settings.height).attr("width", settings.width);
   var gameScreen = d3.select('.gameSpace').style("height", settings.height + "px").style("width", settings.width + "px");
 
   //draw background
@@ -227,16 +227,16 @@ var printScore = function(){
 //----MAIN GAME FUNCTION----
 var startGame = function() {
   //add event listener for clicking and dragging the player
-  
+
   var mouseCoordinates = [0, 0];     //d3 coordinates are stored in an array, [x, y]
   var timeBetweenEnemyMoves = 1000;  //Time between each time the enemies move to a new location in ms
-  populateEnemies(settings.numEnemies); 
+  populateEnemies(settings.numEnemies);
   populatePlayer();                  //Create the player and paint to screen
   var player = playerArray[0];
 
   setInterval(function(){ moveEnemies(); }, timeBetweenEnemyMoves);
   setInterval(function(){ printScore(); }, 100);
- 
+
   //Event listener that locks the player to the mouse position
   d3.select('.gameSpace').data(playerArray).on('mousemove', function(d) {
     mouseCoordinates = d3.mouse(this);
@@ -245,12 +245,11 @@ var startGame = function() {
       player.y = mouseCoordinates[1];
       d3.selectAll('.player').attr('cx', player.x).attr('cy', player.y);
     }
-  });  
+  });
   d3.selectAll('.player').data(playerArray).on('click', function(d){
       playerDead = false;
   });
-
-  
 }
 
 startGame();
+
